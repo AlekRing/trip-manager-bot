@@ -1,0 +1,26 @@
+name: Deploy to Heroku
+
+on:
+  push:
+    branches:
+      - main  # Set to your default branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Set up Heroku CLI
+    - name: Set up Heroku CLI
+      uses: akhileshns/heroku-deploy@v3.12.12 # This is a community action
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }} # Your Heroku app name
+        heroku_email: YOUR_HEROKU_EMAIL_ADDRESS
+
+    # Deploy to Heroku
+    - name: Deploy
+      run: |
+        git push heroku HEAD:master
