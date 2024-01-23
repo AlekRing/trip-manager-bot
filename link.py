@@ -1,36 +1,30 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import re
 import os
 
 TOKEN = os.environ.get('BOT_TOKEN')
 
-def start(update, context):
-    update.message.reply_text('Hello! Send me messages in the format: "Location Name\nGoogle Maps URL" on each line.')
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Hi! Send me a place name and Google Maps URL.')
 
-def handle_message(update, context):
-    message_text = update.message.text
-    lines = message_text.strip().split('\n')
+def echo(update: Update, context: CallbackContext) -> None:
+    message = update.message.text
+    pattern = r"(.+?)\s(https://maps\.app\.goo\.gl/.+)"
+    match = re.search(pattern, message)
+    if match:
+        place_name, url = match.groups()
+        response = f"[{place_name}]({url})"
+        update.message.reply_markdown(response)
+    else:
+        update.message.reply_text("Please send a place name followed by a Google Maps URL.")
 
-    reply_texts = []
-    url_pattern = re.compile(r'https?://www\.google\.com/maps/place/')
+def main() -> None:
+    updater = Updater(TOKEN)
 
-    for line in lines:
-        # Split the line into name and URL
-        parts = line.rsplit(' ', 1) # Splitting from the end to get the last part as URL
-        if len(parts) == 2 and url_pattern.match(parts[1]):
-            location_name, url = parts
-            reply_texts.append(f"[{location_name}]({url})")
-        else:
-            reply_texts.append("Invalid line format or URL")
-
-    update.message.reply_text('\n'.join(reply_texts), parse_mode='Markdown', disable_web_page_preview=True)
-
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    dispatcher = updater.dispatcher
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
     updater.start_polling()
     updater.idle()
